@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="OpenLayers-2.10/theme/default/style.css" type="text/css">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+    <script src="OpenLayers-2.10/lib/OpenLayers.js"></script>
+    <script src="OpenLayersWebGL/glMatrix-0.9.5.min.js"></script>
+    <script src="OpenLayersWebGL/WebGLRenderer.js"></script>
+    <script src="JSSource.js"></script>
+    <script src="stockholm_roads.js"></script>
+    <script type="text/javascript">
+        function init(){
+            // You may want to place these lines inside an onload handler
+            CFInstall.check({
+                mode: "overlay",
+                destination: "http://www.waikiki.com"
+            });
+
+            var map = new OpenLayers.Map({
+                div: "map",
+                layers: [new OpenLayers.Layer.OSM( "Simple OSM Map")]
+            });
+
+            map.setCenter(new OpenLayers.LonLat(18.1, 59.3).transform(
+                    new OpenLayers.Projection("EPSG:4326"),
+                    map.getProjectionObject()
+                ), 11);
+
+            var wmsLayer = map.layers[0];
+
+            // add web gl as priotitized renderer
+            OpenLayers.Layer.Vector.prototype.renderers.splice(0, 0, 'WebGL');
+
+            var vectorLayer = new OpenLayers.Layer.Vector("GeoJSON", {
+                        strategies: [new OpenLayers.Strategy.Fixed()],
+                        protocol: new OpenLayers.Protocol.JSSource({
+                            objectName: "stockholm_roads",
+                            format: new OpenLayers.Format.GeoJSON()
+                        })
+                    });
+
+            wmsLayer.events.register('loadend', vectorLayer.renderer, vectorLayer.renderer.redraw);
+
+            map.addLayers([wmsLayer, vectorLayer]);
+        }
+    </script>
+    <script id="shader-fs" type="x-shader/x-fragment">
+        #ifdef GL_ES
+        precision highp float;
+        #endif
+
+        void main(void) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    </script>
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+
+        void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        }
+    </script>
+</head>
+<body onload="init()">
+<h1 id="title">Stockholms vägnät från OSM, ~15000 linestrings</h1>
+
+<p id="shortdesc">
+    Prestandatest av vektorgrafik.
+</p>
+<div id="map" class="smallmap"></div>
+<canvas id="glcanvas" style="border: none;" width="500" height="500"></canvas>
+</body>
+</html>
