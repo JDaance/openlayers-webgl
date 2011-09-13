@@ -47,7 +47,7 @@
 
             wmsLayer.events.register('loadend', vectorLayer.renderer, vectorLayer.renderer.redraw);
 
-            map.addLayers([wmsLayer, vectorLayer]);
+            map.addLayers([vectorLayer]);
         }
     </script>
     <script id="shader-fs" type="x-shader/x-fragment">
